@@ -714,7 +714,7 @@ def randomTree():
     oVals = ['>>','*','&','^','%','|','-','+','/']
     oProbs = [.2,.2,.2,.1,2/30,.1,1/30,1/30,2/30]
     tree = makeTree("t" + str(random.choice(oVals, p=oProbs)) + "(t" + str(random.choice(oVals, p=oProbs)) + str(random.randint(3,12)) + ")")
-    ext_num = int(np.random.normal(loc = 6, scale=3))
+    ext_num = int(np.random.normal(loc = 8, scale=2))
     for i in range(ext_num):
         CEXT(tree, tree._root)
 
