@@ -6,6 +6,7 @@ from scipy import signal
 from statistics import mean 
 import librosa             # The librosa library
 import librosa.display     # librosa's display module (for plotting features)
+import math
 
 class Error(Exception):
     def __init__(self, msg):
@@ -541,13 +542,17 @@ def createTree(expList):
     root._element = opStack.pop()
     
     if type(varStack[-1]) == type([]):
-        root._right = createTree(varStack.pop())   
+        root._right = createTree(varStack.pop()) 
+        root._right._parent = root   
     else:
         root._right = Node(varStack.pop())
+        root._right._parent = root
     if type(varStack[-1]) == type([]):
         root._left = createTree(varStack.pop())
+        root._left._parent = root
     else:
         root._left = Node(varStack.pop())
+        root._left._parent = root
     
     
     if not(root._left is None or root._right is None):
@@ -673,6 +678,41 @@ def TRM(tree, node = None):
     
     return
 
+def selectOp(tree, max_height = 2, fixed_height = None, node = None):
+    tree_ops = dict(tree.operators())
+    if fixed_height == None:
+        low_ops = [i for i in tree_ops if tree_ops[i] <= max_height]
+    else:
+        low_ops = [i for i in tree_ops if tree_ops[i] == fixed_height]
+        
+    height = max([tree_ops[i] for i in low_ops])
+    inverted = [height+1-tree_ops[i] for i in low_ops]
+    total = sum(inverted)
+
+    nodeProbs = [i / total for i in inverted]
+    nodeVals = low_ops
+    
+    nodeChoice = random.choice(nodeVals, p=nodeProbs)
+    return (nodeChoice, tree_ops[nodeChoice])
+
+def cross(tree1, tree2, max_height = None, node1 = None, node2 = None):
+    tree1_copy = makeTree(prettyParse(tree1))
+    tree2_copy = makeTree(prettyParse(tree2))
+    
+    if max_height == None:
+        donor = selectOp(tree2_copy)
+    else:
+        donor = selectOp(tree2_copy, max_height = min(max_height, tree2_copy._height1() - 1))
+        
+    receiver = selectOp(tree1_copy, fixed_height = min(donor[1], tree1_copy._height1() - 1))
+
+    if receiver[0]._parent._left == receiver[0]:
+        receiver[0]._parent._left = donor[0]
+    if receiver[0]._parent._right == receiver[0]:
+        receiver[0]._parent._right = donor[0]
+    
+    return tree1_copy
+
 def stuborn_mutate(tree, TRM_flag = 0):
     new_tree = mutate(tree,TRM_flag)
     childParsed = prettyParse(new_tree)
@@ -709,6 +749,28 @@ def render(children, fs, seconds):
             dead_children.append(child)
 
     return renderings, dead_children
+
+def extract_features(tree, node = None):
+    
+    features = {'height': tree._height1(), 
+                'leaves': len([i for i in list(tree.operands()) if i[0]._element != 't']), 
+                't-count': len([i for i in list(tree.operands()) if i[0]._element == 't']), 
+                'operators': len(list(tree.operators())),
+                '2_powers': 0,
+                'r(>>)':0, 'r(*)':0, 'r(&)':0, 'r(^)':0, 'r(%)':0, 'r(|)':0, 'r(-)':0, 'r(+)':0, 'r(/)':0,
+                '>>':0, '*':0, '&':0, '^':0, '%':0, '|':0, '-':0, '+':0, '/':0}
+    
+    tree_ops = dict(tree.operators())
+    nums = [int(i[0]._element) for i in list(tree.operands()) if i[0]._element != 't']
+    for op in tree_ops:
+        features[op._element] += 1
+    
+    for num in nums:
+        if math.log(num, 2).is_integer():
+            features['2_powers'] += 1
+    root_str = "r(" + tree._root._element + ")"
+    features[root_str] = 1
+    return features
 
 def randomTree():
     oVals = ['>>','*','&','^','%','|','-','+','/']
