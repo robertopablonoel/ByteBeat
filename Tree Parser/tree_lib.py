@@ -3,15 +3,16 @@ from numpy import random
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
-from statistics import mean 
+from statistics import mean
 import librosa             # The librosa library
 import librosa.display     # librosa's display module (for plotting features)
 import math
+import statistics
 
 class Error(Exception):
     def __init__(self, msg):
         self.msg = msg
-        
+
 class ArrayStack:
     def __init__(self):
         self._data = []
@@ -45,7 +46,7 @@ class Node:
         self._left = left
         self._right = right
         self._height = 1
-            
+
 class Tree:
     class TreeNode:
         def __init__(self, element, parent = None, left = None, right = None):
@@ -111,7 +112,7 @@ class Tree:
 
     def nodes(self):
         """Generate an iteration of the tree's nodes."""
-        return self.preorder()      
+        return self.preorder()
                               # return entire preorder iteration
     def operators(self):
         """Generate a preorder iteration of nodes in the tree."""
@@ -126,7 +127,7 @@ class Tree:
             for node in self._subtree_preorder(self._root):  # start recursion
                 if self.is_leaf(node):
                     yield node, self.height(node)
-    
+
     def numbers(self):
         """Generate a preorder iteration of nodes in the tree."""
         if not self.is_empty():
@@ -315,20 +316,20 @@ class Tree:
         """
         if node is None:
             return -1
-        return self._height2(node)        # start _height2 recursion 
-    
+        return self._height2(node)        # start _height2 recursion
+
     def is_height_balanced(self):
         '''
         @return: True if self BinaryTree is height balanced. False otherwise.
         '''
         return self.node_balance(self._root)
-    
+
     def node_balance(self, node):
-        if(node is None): 
+        if(node is None):
             return True
         #print(node._element," : |", self.Bheight(node._left), " - ", self.Bheight(node._right), "| : Diff = ", abs(self.Bheight(node._left) - self.Bheight(node._right)))
         return self.node_balance(node._right) and self.node_balance(node._left) and abs(self.Bheight(node._left) - self.Bheight(node._right)) <= 1
-        
+
     def sum_of_leaves(self):
         '''
         @return: Sum value for all the leaf nodes. You can assume test Tree only contains integers
@@ -338,14 +339,14 @@ class Tree:
         for c in self.nodes():
             if self.is_leaf(c):
                 agg += c._element
-        
+
         return agg
 
     def flip_tree(self, node = None):
         '''
         @node: a TreeNode object
 
-        flips the left and right children all nodes in the subtree of given node, 
+        flips the left and right children all nodes in the subtree of given node,
         and if node parameter is omitted it flips the entire tree.
 
         @return: Nothing. Modify self
@@ -354,7 +355,7 @@ class Tree:
         if(node == None):
             node = self._root
         self.flop(node)
-        
+
     def flop(self, node):
         if node == None:
             return
@@ -371,7 +372,7 @@ class Tree:
         @return: Float result value for evaluating self Tree.
         '''
         # Task 5
-        
+
         return self.helper(self._root)
     def helper(self, node):
         if node == None:
@@ -387,7 +388,7 @@ class Tree:
                 return self.helper(node._left) / self.helper(node._right)
             if node._element == "-":
                 return self.helper(node._left) - self.helper(node._right)
-    
+
 def build_expression_tree(postfix):
     '''
     @postfix: a python string. contains spaces between each operand/operator.
@@ -422,8 +423,8 @@ def build_expression_tree(postfix):
 
 def pretty_print(tree):
     # ----------------------- Need to enter height to work -----------------
-    
-    levels = tree.height() + 1  
+
+    levels = tree.height() + 1
     print_internal([tree._root], 1, levels)
 
 def print_internal(this_level_nodes, current_level, max_level):
@@ -478,7 +479,9 @@ def print_spaces(number):
     for i in range(number):
         print(" ", end = "")
 
+
 def spaceOut(exp):
+    print(exp)
     new_exp = []
     skip_next = False
     i = 0
@@ -490,7 +493,7 @@ def spaceOut(exp):
             new_exp.append("<<")
             i += 2
         elif exp[i] in "0123456789":
-            if new_exp[-1][-1] in "0123456789":
+            if len(new_exp) > 0 and new_exp[-1][-1] in "0123456789":
                 new_exp[-1] += exp[i]
             else:
                 new_exp.append(exp[i])
@@ -498,12 +501,12 @@ def spaceOut(exp):
         else:
             new_exp.append(exp[i])
             i += 1
-            
+
     new_str = new_exp[0]
     for i in range(1,len(new_exp)):
         new_str += " "
         new_str += new_exp[i]
-    return new_exp 
+    return new_exp
 
 def getSubIDX(exp):
     parenth = 1
@@ -522,7 +525,7 @@ def createTree(expList):
     varStack = []
     ops = {'*':1,'/':1,'%':1,'+':2,'-':2,'>>':3,'<<':3,'&':4,'^':5,'|':6}
     i = 0
-    
+
     while i < len(expList):
         elem = expList[i]
         if elem in ops:
@@ -538,12 +541,12 @@ def createTree(expList):
         else:
             varStack.append(elem)
             i+= 1
-            
+
     root._element = opStack.pop()
-    
+
     if type(varStack[-1]) == type([]):
-        root._right = createTree(varStack.pop()) 
-        root._right._parent = root   
+        root._right = createTree(varStack.pop())
+        root._right._parent = root
     else:
         root._right = Node(varStack.pop())
         root._right._parent = root
@@ -553,10 +556,10 @@ def createTree(expList):
     else:
         root._left = Node(varStack.pop())
         root._left._parent = root
-    
-    
+
+
     if not(root._left is None or root._right is None):
-        root._height += max(root._left._height, root._right._height)    
+        root._height += max(root._left._height, root._right._height)
     return root
 
 def makeTree(expression):
@@ -573,14 +576,14 @@ def parseOut(tree, node):
         return node._element
     else:
         return "(" + parseOut(tree,node._left) + node._element + parseOut(tree,node._right) + ")"
-        
+
 def mutate(tree, TRM_flag = 0):
     # Change of Operator, Change of Variable, Constrained Extension, Unconstrained Extension, Trim
     mTypes = ['COO', 'COV','CEXT', 'TRM']
     nodes = list(tree.nodes())
     if len(nodes) < 7:
         TRM_flag = 1
-    
+
     if TRM_flag == 0:
         mProbs = [.3,.4,.2,.1]
     else:
@@ -589,11 +592,11 @@ def mutate(tree, TRM_flag = 0):
     mChoice = random.choice(mTypes, p=mProbs)
 
     new_tree = makeTree(prettyParse(tree))
-    
+
     eval(mChoice)(new_tree, new_tree._root)
 
     return new_tree
-    
+
 def COV(tree, node, parent = None):
     if tree.is_leaf(node):
         if node._element != "t":
@@ -619,16 +622,16 @@ def COO(tree, node = None):
 
     #oVals = ['>>','*','&','^','|','-','+','/']
     #oProbs = [.2,.2,.2,.1 + 2/30,.1,0,2/30,2/30]
-    
+
     oVals = ['>>','*','&','^','%','|','-','+','/']
     oProbs = [.2,.2,.2,.1,2/30,.1,1/30,1/30,2/30]
 
     nodeProbs = [i / total for i in inverted]
     nodeVals = list(tree_ops.keys())
-    
+
     nodeChoice = random.choice(nodeVals, p=nodeProbs)
     oChoice = random.choice(oVals, p=oProbs)
-    
+
     nodeChoice._element = oChoice
     return
 
@@ -642,25 +645,25 @@ def CEXT(tree, node = None):
     avg_num = mean(tree_nums)
     inverted = [i + 1 for i in tree_ops.values()]
     total = sum(inverted)
-    
+
     #oVals = ['>>','*','&','^','|','-','+','/']
     #oProbs = [.2,.2,.2,.1 + 2/30,.1,0,2/30,2/30]
 
     oVals = ['>>','*','&','^','%','|','-','+','/']
     oProbs = [.2,.2,.2,.1,2/30,.1,1/30,1/30,2/30]
-    
+
 
     nodeProbs = [i / total for i in inverted]
     nodeVals = list(tree_ops.keys())
-    
+
     nodeChoice = random.choice(nodeVals, p=nodeProbs)
     oChoice = random.choice(oVals, p=oProbs)
-    
+
     nodeChoice._element = oChoice
-    
+
     nodeChoice._left = Node("t")
     nodeChoice._right = Node(str(int(np.random.normal(loc = avg_num, scale=2))))
-    
+
     return
 
 def TRM(tree, node = None):
@@ -669,13 +672,13 @@ def TRM(tree, node = None):
     avg_num = mean(tree_nums)
 
     nodeVals = [i for i in list(tree_ops.keys()) if tree_ops[i] == 1]
-    
+
     nodeChoice = random.choice(nodeVals)
-    
+
     nodeChoice._element = random.choice([str(int(np.random.normal(loc = avg_num, scale=2))),"t"], p = [.9,.1])
     nodeChoice._left = None
     nodeChoice._right = None
-    
+
     return
 
 def selectOp(tree, max_height = 2, fixed_height = None, node = None):
@@ -684,40 +687,40 @@ def selectOp(tree, max_height = 2, fixed_height = None, node = None):
         low_ops = [i for i in tree_ops if tree_ops[i] <= max_height]
     else:
         low_ops = [i for i in tree_ops if tree_ops[i] == fixed_height]
-        
+
     height = max([tree_ops[i] for i in low_ops])
     inverted = [height+1-tree_ops[i] for i in low_ops]
     total = sum(inverted)
 
     nodeProbs = [i / total for i in inverted]
     nodeVals = low_ops
-    
+
     nodeChoice = random.choice(nodeVals, p=nodeProbs)
     return (nodeChoice, tree_ops[nodeChoice])
 
 def cross(tree1, tree2, max_height = None, node1 = None, node2 = None):
     tree1_copy = makeTree(prettyParse(tree1))
     tree2_copy = makeTree(prettyParse(tree2))
-    
+
     if max_height == None:
         donor = selectOp(tree2_copy)
     else:
         donor = selectOp(tree2_copy, max_height = min(max_height, tree2_copy._height1() - 1))
-        
+
     receiver = selectOp(tree1_copy, fixed_height = min(donor[1], tree1_copy._height1() - 1))
 
     if receiver[0]._parent._left == receiver[0]:
         receiver[0]._parent._left = donor[0]
     if receiver[0]._parent._right == receiver[0]:
         receiver[0]._parent._right = donor[0]
-    
+
     return tree1_copy
 
 def stuborn_mutate(tree, TRM_flag = 0):
     new_tree = mutate(tree,TRM_flag)
     childParsed = prettyParse(new_tree)
     try:
-        test_wave = np.array([eval(childParsed) % 256 for t in range(1000,1257)])
+        test_wave = np.array([eval(childParsed) % 256 for t in range(0,2000)])
         if test_wave.sum() != 0:
             return(childParsed)
         else:
@@ -738,35 +741,42 @@ def mutate_or_kill(tree, kill_duds = True):
     except:
         return
 
-def render(children, fs, seconds):
+def render(trees, fs, seconds):
     #must %256 so it doesn't go out of char range
     renderings = []
     dead_children = []
-    for child in children:
+    for child in trees:
         try:
             renderings.append([eval(child) % 256 for t in range(fs * seconds)])
         except:
-            dead_children.append(child)
+            dead_childre.append(child)
 
     return renderings, dead_children
 
 def extract_features(tree, node = None):
-    
-    features = {'height': tree._height1(), 
-                'leaves': len([i for i in list(tree.operands()) if i[0]._element != 't']), 
-                't-count': len([i for i in list(tree.operands()) if i[0]._element == 't']), 
+
+    features = {'height': tree._height1(),
+                'leaves': len([i for i in list(tree.operands()) if i[0]._element != 't']),
+                't-count': len([i for i in list(tree.operands()) if i[0]._element == 't']),
                 'operators': len(list(tree.operators())),
                 '2_powers': 0,
+                'avg_operand': statistics.mean([int(i[0]._element) for i in list(tree.operands()) if i[0]._element != 't']),
+                'std_operand': 0,
                 'r(>>)':0, 'r(*)':0, 'r(&)':0, 'r(^)':0, 'r(%)':0, 'r(|)':0, 'r(-)':0, 'r(+)':0, 'r(/)':0,
-                '>>':0, '*':0, '&':0, '^':0, '%':0, '|':0, '-':0, '+':0, '/':0}
-    
+                '>>':0, '*':0, '&':0, '^':0, '%':0, '|':0, '-':0, '+':0, '/':0
+                }
+    try:
+        stdev = statistics.stdev([int(i[0]._element) for i in list(tree.operands()) if i[0]._element != 't'])
+    except:
+        stdev = 0
+    features['std_operand'] = stdev
     tree_ops = dict(tree.operators())
     nums = [int(i[0]._element) for i in list(tree.operands()) if i[0]._element != 't']
     for op in tree_ops:
         features[op._element] += 1
-    
+
     for num in nums:
-        if math.log(num, 2).is_integer():
+        if num != 0 and math.log(abs(num), 2).is_integer():
             features['2_powers'] += 1
     root_str = "r(" + tree._root._element + ")"
     features[root_str] = 1
@@ -786,15 +796,15 @@ def create():
     new_tree = randomTree()
     childParsed = prettyParse(new_tree)
     try:
-        test_wave = np.array([eval(childParsed) % 256 for t in range(1000,1257)])
+        test_wave = np.array([eval(childParsed) % 256 for t in range(0,2000)])
         if (test_wave.sum() != 0):
             return(childParsed)
-        
+
         else:
             return stuborn_create()
     except:
         return stuborn_create()
- 
+
 def stuborn_create():
     tree = create()
     try:
@@ -818,6 +828,3 @@ def graph(wave, fs = 16000):
     plt.show()
     plt.figure(figsize=(10, 3))
     librosa.display.waveplot(np.array(wave, dtype= 'f'), sr = fs)
-
-
-    
